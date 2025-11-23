@@ -1,5 +1,6 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useContext } from 'react'
 import './App.css'
+import UserContext from './contexts/UsersContext'
 
 function App() {
   const [activeTab, setActiveTab] = useState('live-scan')
@@ -18,86 +19,12 @@ function App() {
     allergies: '',
     medicalHistory: ''
   })
-  const [patients, setPatients] = useState([
-    {
-      id: 1,
-      name: 'Ali El-Rafih',
-      age: '28',
-      sex: 'Male',
-      height: '5\'10"',
-      weight: '175 lbs',
-      insurance: 'BlueCross BlueShield',
-      allergies: 'Penicillin',
-      medicalHistory: 'Diabetes Type 2, diagnosed 2020',
-      photo: 'https://ui-avatars.com/api/?name=Ali+El-Rafih&size=200&background=1976D2&color=fff&bold=true',
-      dateAdded: '2024-01-15'
-    },
-    {
-      id: 2,
-      name: 'Rad Smith',
-      age: '35',
-      sex: 'Male',
-      height: '6\'0"',
-      weight: '190 lbs',
-      insurance: 'Aetna',
-      allergies: 'Peanuts, Shellfish',
-      medicalHistory: 'Asthma, Seasonal allergies',
-      photo: 'https://ui-avatars.com/api/?name=Rad+Smith&size=200&background=2E7D32&color=fff&bold=true',
-      dateAdded: '2024-01-20'
-    },
-    {
-      id: 3,
-      name: 'Novak Johnson',
-      age: '42',
-      sex: 'Female',
-      height: '5\'6"',
-      weight: '140 lbs',
-      insurance: 'UnitedHealthcare',
-      allergies: 'None',
-      medicalHistory: 'Hypertension, managed with medication',
-      photo: 'https://ui-avatars.com/api/?name=Novak+Johnson&size=200&background=7B1FA2&color=fff&bold=true',
-      dateAdded: '2024-02-01'
-    },
-    {
-      id: 4,
-      name: 'Sarah Williams',
-      age: '29',
-      sex: 'Female',
-      height: '5\'4"',
-      weight: '125 lbs',
-      insurance: 'Cigna',
-      allergies: 'Latex',
-      medicalHistory: 'Migraines, controlled with preventive medication',
-      photo: 'https://ui-avatars.com/api/?name=Sarah+Williams&size=200&background=E64A19&color=fff&bold=true',
-      dateAdded: '2024-02-10'
-    },
-    {
-      id: 5,
-      name: 'Michael Chen',
-      age: '45',
-      sex: 'Male',
-      height: '5\'11"',
-      weight: '180 lbs',
-      insurance: 'Kaiser Permanente',
-      allergies: 'Aspirin',
-      medicalHistory: 'High cholesterol, on statin therapy',
-      photo: 'https://ui-avatars.com/api/?name=Michael+Chen&size=200&background=00897B&color=fff&bold=true',
-      dateAdded: '2024-02-15'
-    },
-    {
-      id: 6,
-      name: 'Emily Davis',
-      age: '31',
-      sex: 'Female',
-      height: '5\'7"',
-      weight: '150 lbs',
-      insurance: 'Humana',
-      allergies: 'Dust mites, Pollen',
-      medicalHistory: 'Seasonal asthma, uses inhaler as needed',
-      photo: 'https://ui-avatars.com/api/?name=Emily+Davis&size=200&background=5E35B1&color=fff&bold=true',
-      dateAdded: '2024-02-20'
-    }
-  ])
+
+
+  const { users, refreshUsers } = useContext(UserContext)
+
+
+
   const [selectedPatient, setSelectedPatient] = useState(null)
   const [searchQuery, setSearchQuery] = useState('')
   const videoRef = useRef(null)
@@ -527,14 +454,14 @@ function App() {
 
   const getCurrentPatientIndex = () => {
     if (!selectedPatient) return -1
-    const filteredPatients = patients.filter(patient =>
+    const filteredPatients = users.filter(patient =>
       patient.name.toLowerCase().includes(searchQuery.toLowerCase())
     )
     return filteredPatients.findIndex(p => p.id === selectedPatient.id)
   }
 
   const navigateToPrevious = () => {
-    const filteredPatients = patients.filter(patient =>
+    const filteredPatients = users.filter(patient =>
       patient.name.toLowerCase().includes(searchQuery.toLowerCase())
     )
     const currentIndex = getCurrentPatientIndex()
@@ -547,7 +474,7 @@ function App() {
   }
 
   const navigateToNext = () => {
-    const filteredPatients = patients.filter(patient =>
+    const filteredPatients = users.filter(patient =>
       patient.name.toLowerCase().includes(searchQuery.toLowerCase())
     )
     const currentIndex = getCurrentPatientIndex()
@@ -560,7 +487,7 @@ function App() {
   }
 
   const renderDatabase = () => {
-    const filteredPatients = patients.filter(patient =>
+    const filteredPatients = users.filter(patient =>
       patient.name.toLowerCase().includes(searchQuery.toLowerCase())
     )
 
@@ -611,7 +538,7 @@ function App() {
         </div>
 
         {selectedPatient && (() => {
-          const filteredPatients = patients.filter(patient =>
+          const filteredPatients = users.filter(patient =>
             patient.name.toLowerCase().includes(searchQuery.toLowerCase())
           )
           const currentIndex = filteredPatients.findIndex(p => p.id === selectedPatient.id)
