@@ -38,7 +38,7 @@ known_names: List[str] = []
 FAKE_PATIENT_DATA: Dict[str, Dict[str, Any]] = {
     "rad": {
         "patient_id": "A123",
-        "name": "Rad Smith",
+        "name": "Rad Mehdipour",
         "age": "35",
         "sex": "Male",
         "height": "6'0\"",
@@ -60,7 +60,7 @@ FAKE_PATIENT_DATA: Dict[str, Dict[str, Any]] = {
     },
     "novak": {
         "patient_id": "C789",
-        "name": "Novak Johnson",
+        "name": "Novak Vukojicic",
         "age": "42",
         "sex": "Female",
         "height": "5'6\"",
@@ -68,6 +68,17 @@ FAKE_PATIENT_DATA: Dict[str, Dict[str, Any]] = {
         "insurance": "UnitedHealthcare",
         "allergies": [],
         "conditions": ["Hypertension"],
+    },
+    "akshin": {
+        "patient_id": "D012",
+        "name": "Akshin Makkar",
+        "age": "30",
+        "sex": "Male",
+        "height": "5'8\"",
+        "weight": "165 lbs",
+        "insurance": "Cigna",
+        "allergies": ["Latex"],
+        "conditions": ["High Cholesterol"],
     },
 }
 
