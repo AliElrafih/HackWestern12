@@ -22,16 +22,20 @@ app = FastAPI()
 
 # -------------------- Config --------------------
 DB_FILE = "hackathon_users.db"
-PROFILE_PICS_DIR = "profile_pics"
 KNOWN_FACES_DIR = "known_faces"
 MODEL_NAME = "Facenet"
 
-os.makedirs(PROFILE_PICS_DIR, exist_ok=True)
+os.makedirs(KNOWN_FACES_DIR, exist_ok=True)
+
+origins = [
+    "http://localhost:5173",  # Vite
+    "http://localhost:3000",  # CRA (if you ever use it)
+]
 
 # -------------------- CORS Middleware --------------------
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # restrict in production
+    allow_origins=origins,  # restrict in production
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -41,7 +45,7 @@ app.add_middleware(
 patient_embeddings: Dict[str, List[np.ndarray]] = {}
 FAKE_PATIENT_DATA: Dict[str, Dict[str, Any]] = {
     "rad": {
-        "patient_id": "A123",
+        "patient_id": "1",
         "name": "Rad Mehdipour",
         "age": "35",
         "sex": "Male",
@@ -52,7 +56,7 @@ FAKE_PATIENT_DATA: Dict[str, Dict[str, Any]] = {
         "conditions": ["Asthma"],
     },
     "ali": {
-        "patient_id": "B456",
+        "patient_id": "2",
         "name": "Ali El-Rafih",
         "age": "28",
         "sex": "Male",
@@ -63,7 +67,7 @@ FAKE_PATIENT_DATA: Dict[str, Dict[str, Any]] = {
         "conditions": ["Diabetes"],
     },
     "novak": {
-        "patient_id": "C789",
+        "patient_id": "3",
         "name": "Novak Vukojicic",
         "age": "42",
         "sex": "Female",
@@ -74,7 +78,7 @@ FAKE_PATIENT_DATA: Dict[str, Dict[str, Any]] = {
         "conditions": ["Hypertension"],
     },
     "akshin": {
-        "patient_id": "D012",
+        "patient_id": "4",
         "name": "Akshin Makkar",
         "age": "30",
         "sex": "Male",
@@ -85,6 +89,45 @@ FAKE_PATIENT_DATA: Dict[str, Dict[str, Any]] = {
         "conditions": ["High Cholesterol"],
     },
 }
+
+
+def load_saved_patients():
+    conn = sqlite3.connect(DB_FILE)
+    cursor = conn.cursor()
+    cursor.execute(
+        "SELECT id, name, age, sex, height, weight, insurance, allergies, conditions, profile_pic_path "
+        "FROM users"
+    )
+    rows = cursor.fetchall()
+    conn.close()
+
+    
+    for row in rows:
+        # Use the first name (lowercased) as a key and ensure uniqueness
+        key = row[1].split(' ')[0].lower()
+        original_key = key
+        suffix = 1
+        while key in FAKE_PATIENT_DATA:
+            key = f"{original_key}_{suffix}"
+            suffix += 1
+
+        FAKE_PATIENT_DATA[key] = {
+            "id": row[0],
+            "name": row[1],
+            "age": row[2],
+            "sex": row[3],
+            "height": row[4],
+            "weight": row[5],
+            "insurance": row[6],
+            "allergies": row[7],
+            "conditions": row[8],
+            "profile_pic_path": row[9]
+        }
+
+    print("Loaded saved patients from database.")
+    print(FAKE_PATIENT_DATA)
+
+    
 
 def cosine_similarity(a: np.ndarray, b: np.ndarray) -> float:
     if a is None or b is None:
@@ -139,7 +182,7 @@ def get_user_from_db(user_id: int) -> Dict:
     conn = sqlite3.connect(DB_FILE)
     cursor = conn.cursor()
     cursor.execute(
-        "SELECT id, name, age, sex, height, weight, insurance_provider, insurance_policy, allergies, medical_history, profile_pic_path "
+        "SELECT id, name, age, sex, height, weight, insurance, allergies, conditions, profile_pic_path "
         "FROM users WHERE id = ?",
         (user_id,)
     )
@@ -153,11 +196,10 @@ def get_user_from_db(user_id: int) -> Dict:
             "sex": row[3],
             "height": row[4],
             "weight": row[5],
-            "insurance_provider": row[6],
-            "insurance_policy": row[7],
-            "allergies": row[8],
-            "medical_history": row[9],
-            "profile_pic_path": row[10]
+            "insurance": row[6],
+            "allergies": row[7],
+            "conditions": row[8],
+            "profile_pic_path": row[9]
         }
     return None
 
@@ -165,6 +207,7 @@ def get_user_from_db(user_id: int) -> Dict:
 @app.on_event("startup")
 def startup_event():
     load_known_faces()
+    load_saved_patients()
     print(f"API ready with user DB and face recognition.")
 
 # -------------------- Root Endpoint --------------------
@@ -185,7 +228,7 @@ def get_all_users():
     conn = sqlite3.connect(DB_FILE)
     cursor = conn.cursor()
     cursor.execute(
-        "SELECT id, name, age, sex, height, weight, insurance_provider, insurance_policy, allergies, medical_history, profile_pic_path "
+        "SELECT id, name, age, sex, height, weight, insurance, allergies, conditions, profile_pic_path "
         "FROM users"
     )
     rows = cursor.fetchall()
@@ -200,38 +243,36 @@ def get_all_users():
             "sex": row[3],
             "height": row[4],
             "weight": row[5],
-            "insurance_provider": row[6],
-            "insurance_policy": row[7],
-            "allergies": row[8],
-            "medical_history": row[9],
-            "profile_pic_path": row[10]
+            "insurance": row[6],
+            "allergies": row[7],
+            "conditions": row[8],
+            "profile_pic_path": row[9]
         })
     return {"users": users}
 
 @app.post("/add_user/")
 async def add_user(
     name: str = Form(...),
-    age: int = Form(...),
-    sex: str = Form(...),
-    height: float = Form(...),
-    weight: float = Form(...),
-    insurance_provider: str = Form(...),
-    insurance_policy: str = Form(...),
-    allergies: str = Form(...),
-    medical_history: str = Form(...),
-    profile_pic: UploadFile = File(...)
+    age: int = Form(None),
+    sex: str = Form(None),
+    height: str = Form(None),
+    weight: str = Form(None),
+    insurance: str = Form(None),
+    allergies: str = Form(None),
+    conditions: str = Form(None),
+    profile_pic: UploadFile = File(None)
 ):
-    pic_filename = f"{name}_{profile_pic.filename}"
-    pic_path = os.path.join(PROFILE_PICS_DIR, pic_filename)
+    pic_filename = f"{name.lower()}_1.jpg"
+    pic_path = os.path.join(KNOWN_FACES_DIR, pic_filename)
     with open(pic_path, "wb") as f:
         f.write(await profile_pic.read())
 
     conn = sqlite3.connect(DB_FILE)
     cursor = conn.cursor()
     cursor.execute(
-        "INSERT INTO users (name, age, sex, height, weight, insurance_provider, insurance_policy, allergies, medical_history, profile_pic_path) "
-        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-        (name, age, sex, height, weight, insurance_provider, insurance_policy, allergies, medical_history, pic_path)
+        "INSERT INTO users (name, age, sex, height, weight, insurance, allergies, conditions, profile_pic_path) "
+        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        (name, age, sex, height, weight, insurance, allergies, conditions, pic_path)
     )
     user_id = cursor.lastrowid
     conn.commit()

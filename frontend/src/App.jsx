@@ -6,6 +6,7 @@ function App() {
   const [activeTab, setActiveTab] = useState('live-scan')
   const [selectedImage, setSelectedImage] = useState(null)
   const [preview, setPreview] = useState(null)
+  const [addPreview, setAddPreview] = useState(null)
   const [loading, setLoading] = useState(false)
   const [result, setResult] = useState(null)
   const [error, setError] = useState(null)
@@ -17,11 +18,11 @@ function App() {
     weight: '',
     insurance: '',
     allergies: '',
-    medicalHistory: ''
+    conditions: ''
   })
 
 
-  const { users, refreshUsers } = useContext(UserContext)
+  const { users, addUser ,refreshUsers } = useContext(UserContext)
 
 
 
@@ -114,7 +115,7 @@ function App() {
         setSelectedImage(file)
         const reader = new FileReader()
         reader.onloadend = () => {
-          setPreview(reader.result)
+          setAddPreview(reader.result)
         }
         reader.readAsDataURL(file)
         stopAddPatientCamera()
@@ -128,7 +129,7 @@ function App() {
       stopAddPatientCamera()
     } else if (activeTab === 'add-patient') {
       stopCamera()
-      if (!preview) {
+      if (!addPreview) {
         startAddPatientCamera()
       }
     } else {
@@ -139,7 +140,7 @@ function App() {
       stopCamera()
       stopAddPatientCamera()
     }
-  }, [activeTab, preview])
+  }, [activeTab, preview, addPreview])
 
   const handleImageSelect = (e) => {
     const file = e.target.files[0]
@@ -180,6 +181,7 @@ function App() {
       if (response.ok) {
         setResult(data)
       } else {
+        console.log(data)
         setError(data.reason || 'Failed to identify patient')
         setResult({ match_found: false, reason: data.reason || 'Failed to identify patient' })
       }
@@ -193,7 +195,7 @@ function App() {
   }
 
   const handleAddPatient = () => {
-    if (!preview || !patientData.name) {
+    if (!addPreview || !patientData.name) {
       setError('Please provide patient photo and name')
       return
     }
@@ -201,12 +203,13 @@ function App() {
     const newPatient = {
       id: Date.now(),
       name: patientData.name,
-      photo: preview,
+      profile_pic: selectedImage,
       ...patientData,
       dateAdded: new Date().toLocaleDateString()
     }
 
-    setPatients([...patients, newPatient])
+  
+    addUser(newPatient)
     setPatientData({
       name: '',
       age: '',
@@ -215,9 +218,9 @@ function App() {
       weight: '',
       insurance: '',
       allergies: '',
-      medicalHistory: ''
+      conditions: ''
     })
-    setPreview(null)
+    setAddPreview(null)
     setSelectedImage(null)
     setError(null)
     // Restart camera for next patient
@@ -346,11 +349,11 @@ function App() {
         <div className="photo-section">
           <h3>Patient Photo</h3>
           <div className="photo-capture-area">
-            {preview ? (
+            {addPreview ? (
               <div className="photo-preview">
-                <img src={preview} alt="Patient" />
+                <img src={addPreview} alt="Patient" />
                 <button className="retake-photo-btn" onClick={() => {
-                  setPreview(null)
+                  setAddPreview(null)
                   setSelectedImage(null)
                   startAddPatientCamera()
                 }}>
@@ -437,8 +440,8 @@ function App() {
             <div className="form-field">
               <label>Medical History:</label>
               <textarea
-                value={patientData.medicalHistory}
-                onChange={(e) => setPatientData({...patientData, medicalHistory: e.target.value})}
+                value={patientData.conditions}
+                onChange={(e) => setPatientData({...patientData, conditions: e.target.value})}
                 placeholder="Enter medical history"
                 rows="3"
               />
@@ -614,7 +617,7 @@ function App() {
                     </div>
                     <div className="modal-info-item full-width">
                       <span className="modal-label">Medical History:</span>
-                      <span className="modal-value">{selectedPatient.medicalHistory || 'No significant history'}</span>
+                      <span className="modal-value">{selectedPatient.conditions || 'No significant history'}</span>
                     </div>
                     <div className="modal-info-item">
                       <span className="modal-label">Date Added:</span>
