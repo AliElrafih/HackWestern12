@@ -177,11 +177,12 @@ function App() {
       })
 
       const data = await response.json()
+
       
-      if (response.ok) {
+      if (data.match_found === true) {
         setResult(data)
       } else {
-        console.log(data)
+        alert('No matching patient found in the database.')
         setError(data.reason || 'Failed to identify patient')
         setResult({ match_found: false, reason: data.reason || 'Failed to identify patient' })
       }
@@ -528,7 +529,7 @@ function App() {
                   onClick={() => setSelectedPatient(patient)}
                 >
                   <div className="patient-card-photo">
-                    <img src={patient.photo} alt={patient.name} />
+                    <img src={`http://localhost:8000/faces/${patient.profile_pic_path}`} alt={patient.name} />
                   </div>
                   <div className="patient-card-info">
                     <h4>{patient.name}</h4>
@@ -582,7 +583,7 @@ function App() {
                 )}
                 <div className="modal-content">
                 <div className="modal-photo-section">
-                  <img src={selectedPatient.photo} alt={selectedPatient.name} />
+                  <img src={`http://localhost:8000/faces/${selectedPatient.profile_pic_path}`} alt={selectedPatient.name} />
                 </div>
                 <div className="modal-info-section">
                   <h2>{selectedPatient.name}</h2>

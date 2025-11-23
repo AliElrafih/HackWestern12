@@ -16,9 +16,13 @@ except ImportError:
 from fastapi import FastAPI, UploadFile, File, HTTPException, Form
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import Response
+from fastapi.staticfiles import StaticFiles
+
 
 # -------------------- FastAPI App --------------------
 app = FastAPI()
+
+app.mount("/faces", StaticFiles(directory="known_faces"), name="faces")
 
 # -------------------- Config --------------------
 DB_FILE = "hackathon_users.db"
@@ -263,8 +267,14 @@ async def add_user(
     profile_pic: UploadFile = File(None)
 ):
     pic_filename = f"{name.lower()}_1.jpg"
+    pic_filename2 = f"{name.lower()}_2.jpg"
     pic_path = os.path.join(KNOWN_FACES_DIR, pic_filename)
+    pic_path2 = os.path.join(KNOWN_FACES_DIR, pic_filename2)
+
     with open(pic_path, "wb") as f:
+        f.write(await profile_pic.read())
+
+    with open(pic_path2, "wb") as f:
         f.write(await profile_pic.read())
 
     conn = sqlite3.connect(DB_FILE)
@@ -272,7 +282,7 @@ async def add_user(
     cursor.execute(
         "INSERT INTO users (name, age, sex, height, weight, insurance, allergies, conditions, profile_pic_path) "
         "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
-        (name, age, sex, height, weight, insurance, allergies, conditions, pic_path)
+        (name, age, sex, height, weight, insurance, allergies, conditions, pic_filename)
     )
     user_id = cursor.lastrowid
     conn.commit()
