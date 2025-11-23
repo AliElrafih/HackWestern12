@@ -210,8 +210,8 @@ def get_user_from_db(user_id: int) -> Dict:
 # -------------------- Startup Event --------------------
 @app.on_event("startup")
 def startup_event():
-    load_known_faces()
     load_saved_patients()
+    load_known_faces()
     print(f"API ready with user DB and face recognition.")
 
 # -------------------- Root Endpoint --------------------
@@ -266,16 +266,20 @@ async def add_user(
     conditions: str = Form(None),
     profile_pic: UploadFile = File(None)
 ):
+   # Read uploaded file once
+    file_bytes = await profile_pic.read()
+
+    # First copy
     pic_filename = f"{name.lower()}_1.jpg"
-    pic_filename2 = f"{name.lower()}_2.jpg"
     pic_path = os.path.join(KNOWN_FACES_DIR, pic_filename)
-    pic_path2 = os.path.join(KNOWN_FACES_DIR, pic_filename2)
-
     with open(pic_path, "wb") as f:
-        f.write(await profile_pic.read())
+        f.write(file_bytes)
 
+    # Second copy
+    pic_filename2 = f"{name.lower()}_2.jpg"
+    pic_path2 = os.path.join(KNOWN_FACES_DIR, pic_filename2)
     with open(pic_path2, "wb") as f:
-        f.write(await profile_pic.read())
+        f.write(file_bytes)
 
     conn = sqlite3.connect(DB_FILE)
     cursor = conn.cursor()
